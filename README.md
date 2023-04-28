@@ -5,7 +5,8 @@ BehaveTrack uses user-specific B-SOiD classifier to predict behavior based on po
 ### Install
 create a conda environment
 ```markdown
-conda create -n behavetrack python==3.9
+conda create -n behavetrack python==3.9 -y 
+conda activate behavetrack
 ```
 clone github repo and change directory into repo
 ```markdown

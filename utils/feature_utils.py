@@ -1,13 +1,7 @@
-import math
-
-import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 from numba import jit
-from scipy import stats
-from stqdm import stqdm
 
 
 @jit(nopython=True)
@@ -183,6 +177,7 @@ def feature_extraction(train_datalist, num_train, framerate):
     for i in range(num_train):
         with st.spinner('Extracting features from pose...'):
             binned_features = bsoid_extract_numba([train_datalist[i]], framerate)
+            # st.write(binned_features, binned_features[0])
             f_integrated.append(binned_features[0])  # getting only the non-shifted
     return f_integrated
 

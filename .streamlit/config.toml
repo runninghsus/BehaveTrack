@@ -6,4 +6,4 @@ primaryColor="#FF9B24"
 font="sans serif"
 
 [server]
-maxUploadSize = 2048
+maxUploadSize = 20480

@@ -5,20 +5,35 @@ from utils.visuals_utils import *
 
 
 def main():
-    st.markdown(f" <h1 style='text-align: left; color: #FF6A95; font-size:30px; "
+    st.markdown(f" <h1 style='text-align: left; color: #FF9B24; font-size:30px; "
                 f"font-family:Avenir; font-weight:normal;'>New data upload</h1> "
                 , unsafe_allow_html=True)
     st.write('')
-    # bsoid_t, asoid_t = st.tabs(['B-SOiD', 'A-SOiD'])
     try:
         if 'bsoid_classifier' in st.session_state:
             st.session_state['classifier'] = st.session_state['bsoid_classifier']
             st.write('B-SOiD classifier loaded!')
+            if 'annotations' not in st.session_state:
+                st.session_state['annotations'] = {key: {'name': None}
+                                                   for key in range(st.session_state['classifier'].n_classes_)}
         elif 'asoid_classifier' in st.session_state:
             st.session_state['classifier'] = st.session_state['asoid_classifier']
             st.write('A-SOiD classifier loaded!')
+
     except:
         st.warning('please return to home to upload sav files')
+    try:
+        infilename = str.join('',
+                               (os.path.join(Path.home(),
+                                             'Desktop/behave_track'),
+                                '/behavior_names.npy'))
+        prev_annotation = np.load(infilename, allow_pickle=True).item()
+        if 'annotations' not in st.session_state:
+            st.session_state['annotations'] = prev_annotation
+        # st.write(st.session_state['annotations'])
+    except:
+        pass
+
     try:
         conditions_list = list(st.session_state['features'].keys())
         text_ = f":orange[**RESET**] data from conditions: {' & '.join([i.rpartition('_')[2] for i in conditions_list])}!"
@@ -37,6 +52,7 @@ def main():
         pose = {f'condition_{key}': [] for key in range(num_cond)}
         features = {f'condition_{key}': [] for key in range(num_cond)}
         condition_prompt(uploaded_files, num_cond)
+
         try:
             data_raw = []
             for i, condition in enumerate(list(uploaded_files.keys())):
@@ -66,15 +82,14 @@ def main():
             pass
             if 'features' in st.session_state:
                 st.experimental_rerun()
-    st.divider()
-
+    condition_pie_plot()
     try:
         if 'pose' in st.session_state:
             mid_expander = st.expander('Analysis method', expanded=True)
             analysis_chosen = mid_expander.radio('',
                                                  ['ethogram', 'behavioral location', 'behavioral ratio',
                                                   'frequency',
-                                                  'duration', 'transition', 'kinematics'],
+                                                  'duration', 'transition'],
                                                  horizontal=True)
             if analysis_chosen == 'ethogram':
                 condition_etho_plot()
@@ -88,8 +103,14 @@ def main():
                 condition_ridge_plot()
             if analysis_chosen == 'transition':
                 condition_transmat_plot()
-            # if analysis_chosen == 'kinematics':
-            #     condition_kinematix_plot()
+
     except:
         pass
 
+    bottom_cont = st.container()
+    with bottom_cont:
+        st.markdown("""---""")
+        st.markdown(f" <h1 style='text-align: left; color: gray; font-size:16px; "
+                    f"font-family:Avenir; font-weight:normal'>"
+                    f"BehaveTrack is developed by Alexander Hsu</h1> "
+                    , unsafe_allow_html=True)

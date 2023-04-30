@@ -13,12 +13,14 @@ def convert_df(df):
 def csv_predict(condition):
     predict_dict = {key: [] for key in range(len(st.session_state['features'][condition]))}
     predict_df = []
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     for f in range(len(st.session_state['features'][condition])):
         predict = st.session_state['classifier'].predict(st.session_state['features'][condition][f])
         predict_dict[f] = {'condition': np.repeat(condition, len(predict)),
                            'file': np.repeat(f, len(predict)),
                            'time': np.round(np.arange(0, len(predict) * 0.1, 0.1), 2),
-                           'behavior': predict}
+                           'behavior': np.hstack([behavior_classes[p] for p in predict])}
         predict_df.append(pd.DataFrame(predict_dict[f]))
     concat_df = pd.concat([predict_df[f] for f in range(len(predict_df))])
     return convert_df(concat_df)

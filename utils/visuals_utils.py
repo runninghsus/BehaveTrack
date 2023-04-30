@@ -1,20 +1,15 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.colors as mcolors
-import plotly.graph_objects as go
-from utils.download_utils import *
-from utils.feature_utils import *
-import plotly.express as px
-import networkx as nx
 import matplotlib as mpl
-import seaborn as sns
-from scipy.signal import savgol_filter
-from utils.classifier_utils import *
-
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import networkx as nx
+import plotly.express as px
+import plotly.graph_objects as go
+import seaborn as sns
 from matplotlib.colors import ListedColormap
-import matplotlib.patches as mpatches
+from scipy.signal import savgol_filter
+
+from utils.classifier_utils import *
+from utils.download_utils import *
 
 
 def ethogram_plot(condition, new_predictions, behavior_names, behavior_colors, length_):
@@ -51,6 +46,8 @@ def ethogram_plot(condition, new_predictions, behavior_names, behavior_colors, l
         ax.imshow(prefill_array[int(rand_start):int(rand_start + length_), :].T, cmap=cmap_)
         ax.set_xticks(np.arange(0, length_, int(length_ / 5)))
         ax.set_xticklabels(np.arange(int(rand_start), int(rand_start + length_), int(length_ / 5)) / 10)
+        ax.set_yticks(np.arange(len(behaviors_with_names)))
+        ax.set_yticklabels(behaviors_with_names)
         ax.set_xlabel('seconds')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -59,6 +56,8 @@ def ethogram_plot(condition, new_predictions, behavior_names, behavior_colors, l
         ax.imshow(prefill_array[rand_start:rand_start + length_, :].T, cmap=cmap_)
         ax.set_xticks(np.arange(rand_start, length_, int(length_ / 5)))
         ax.set_xticklabels(np.arange(0, length_, int(length_ / 5)) / 10)
+        ax.set_yticks(np.arange(len(behaviors_with_names)))
+        ax.set_yticklabels(behaviors_with_names)
         ax.set_xlabel('seconds')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -67,12 +66,11 @@ def ethogram_plot(condition, new_predictions, behavior_names, behavior_colors, l
 
 
 def ethogram_predict(placeholder, condition, behavior_colors, length_):
-    behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     for f in range(len(st.session_state['features'][condition])):
         predict.append(st.session_state['classifier'].predict(st.session_state['features'][condition][f]))
-        # predict.append(frameshift_predict(data_test, 1, st.session_state['classifier'], framerate=30)
-
 
     with placeholder:
         etho_placeholder = st.empty()
@@ -190,7 +188,8 @@ def condition_etho_plot():
 
 
 def pie_predict(placeholder, condition, behavior_colors):
-    behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     # TODO: find a color workaround if a class is missing
     for f in range(len(st.session_state['features'][condition])):
@@ -200,19 +199,23 @@ def pie_predict(placeholder, condition, behavior_colors):
     df_raw = pd.DataFrame(data=predict_dict)
     labels = df_raw['behavior'].value_counts(sort=False).index
     values = df_raw['behavior'].value_counts(sort=False).values
-    names = [f'behavior {int(key)}' for key in behavior_classes]
+    # names = [f'behavior {int(key)}' for key in behavior_classes]
+    names = behavior_classes
     # summary dataframe
     df = pd.DataFrame()
     # do i need this?
     behavior_labels = []
     for l in labels:
         behavior_labels.append(behavior_classes[int(l)])
+    st.write(behavior_labels)
+    # behavior_labels = behavior_classes
     df["values"] = values
     df['labels'] = behavior_labels
     df["colors"] = df["labels"].apply(lambda x:
                                       behavior_colors.get(x))  # to connect Column value to Color in Dict
+    st.write(df)
     with placeholder:
-        fig = go.Figure(data=[go.Pie(labels=[names[int(i)] for i in df["labels"]], values=df["values"], hole=.4)])
+        fig = go.Figure(data=[go.Pie(labels=df["labels"], values=df["values"], hole=.4)])
         fig.update_traces(hoverinfo='label+percent',
                           textinfo='value',
                           textfont_size=16,
@@ -222,7 +225,9 @@ def pie_predict(placeholder, condition, behavior_colors):
 
 
 def condition_pie_plot():
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     figure_container = st.container()
     option_expander = st.expander("Configure colors",
                                   expanded=True)

@@ -199,21 +199,15 @@ def pie_predict(placeholder, condition, behavior_colors):
     df_raw = pd.DataFrame(data=predict_dict)
     labels = df_raw['behavior'].value_counts(sort=False).index
     values = df_raw['behavior'].value_counts(sort=False).values
-    # names = [f'behavior {int(key)}' for key in behavior_classes]
-    names = behavior_classes
     # summary dataframe
     df = pd.DataFrame()
-    # do i need this?
     behavior_labels = []
     for l in labels:
         behavior_labels.append(behavior_classes[int(l)])
-    st.write(behavior_labels)
-    # behavior_labels = behavior_classes
     df["values"] = values
     df['labels'] = behavior_labels
     df["colors"] = df["labels"].apply(lambda x:
                                       behavior_colors.get(x))  # to connect Column value to Color in Dict
-    st.write(df)
     with placeholder:
         fig = go.Figure(data=[go.Pie(labels=df["labels"], values=df["values"], hole=.4)])
         fig.update_traces(hoverinfo='label+percent',
@@ -327,13 +321,15 @@ def condition_pie_plot():
 
 
 def location_predict(placeholder, condition, behavior_colors):
-    behavior_classes = st.session_state['classifier'].classes_
-    names = [f'behavior {int(key)}' for key in behavior_classes]
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
+    # names = [f'behavior {int(key)}' for key in behavior_classes]
     pose = st.session_state['pose'][condition]
     bp_select = placeholder.radio('', st.session_state['bodypart_names'], horizontal=True, label_visibility='collapsed',
                                   key=f'bodypart_radio_{condition}')
     behav_selects = placeholder.multiselect('select behavior to visualize location', behavior_classes,
-                                            default=behavior_classes,
+                                            default=behavior_classes[0],
                                             key=f'behavior_multiselect_{condition}')
     bodypart_idx = st.session_state['bodypart_names'].index(bp_select) * 2
     predict = []
@@ -351,17 +347,16 @@ def location_predict(placeholder, condition, behavior_colors):
                                key=f'ethogram_slider_{condition}')
     file_chosen = f_select - 1
     fig, ax = plt.subplots(1, 1)
-    for b in behavior_classes:
-        # st.write(b)
+    for b, behavior_name in enumerate(behavior_classes):
         idx_b = np.where(predict[file_chosen] == b)[0]
-        if b in behav_selects:
+        if behavior_name in behav_selects:
             ax.scatter(pose[file_chosen][idx_b, bodypart_idx],
                        pose[file_chosen][idx_b, bodypart_idx + 1],
-                       c=behavior_colors[b])
+                       c=behavior_colors[behavior_name])
         else:
             ax.scatter(pose[file_chosen][idx_b, bodypart_idx],
                        pose[file_chosen][idx_b, bodypart_idx + 1],
-                       c=behavior_colors[b], alpha=0.0)
+                       c=behavior_colors[behavior_name], alpha=0.0)
     # minx, miny = np.min(pose[file_chosen][:, bodypart_idx]), np.min(pose[file_chosen][:, bodypart_idx+1])
     # maxx, maxy = np.max(pose[file_chosen][:, bodypart_idx]), np.max(pose[file_chosen][:, bodypart_idx+1])
     plt.axis('off')
@@ -395,7 +390,9 @@ def location_predict(placeholder, condition, behavior_colors):
 
 
 def condition_location_plot():
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     figure_container = st.container()
     option_expander = st.expander("Configure colors",
                                   expanded=True)
@@ -495,7 +492,9 @@ def condition_location_plot():
 
 
 def bar_predict(placeholder, condition, behavior_colors):
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     for f in range(len(st.session_state['features'][condition])):
         predict.append(st.session_state['classifier'].predict(st.session_state['features'][condition][f]))
@@ -505,10 +504,10 @@ def bar_predict(placeholder, condition, behavior_colors):
             bout_counts.append(get_num_bouts(predict[file_idx], behavior_classes))
         bout_mean = np.mean(bout_counts, axis=0)
         bout_std = np.std(bout_counts, axis=0)
-        names = [f'behavior {int(key)}' for key in behavior_classes]
+        # names = [f'behavior {int(key)}' for key in behavior_classes]
         fig = go.Figure()
         fig.add_trace(go.Bar(
-            x=names, y=bout_mean,
+            x=behavior_classes, y=bout_mean,
             # name=names,
             error_y=dict(type='data', array=bout_std),
             width=0.5,
@@ -528,7 +527,9 @@ def bar_predict(placeholder, condition, behavior_colors):
 
 
 def condition_bar_plot():
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     figure_container = st.container()
     option_expander = st.expander("Configure colors",
                                   expanded=True)
@@ -636,7 +637,9 @@ def boolean_indexing(v, fillval=np.nan):
 
 
 def ridge_predict(placeholder, condition, behavior_colors):
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     for f in range(len(st.session_state['features'][condition])):
         predict.append(st.session_state['classifier'].predict(st.session_state['features'][condition][f]))
@@ -659,10 +662,9 @@ def ridge_predict(placeholder, condition, behavior_colors):
                                                        99)),
                             key=f'maxdur_slider_{condition}')
         fig = go.Figure()
-        names = [f'behavior {int(key)}' for key in behavior_classes]
-        for data_line, color, name in zip(duration_matrix, colors, names):
-            fig.add_trace(go.Violin(x=data_line[(data_line < np.nanpercentile(data_line, 99)) &
-                                                (data_line > np.nanpercentile(data_line, 1))],
+        # names = [f'behavior {int(key)}' for key in behavior_classes]
+        for data_line, color, name in zip(duration_matrix, colors, behavior_classes):
+            fig.add_trace(go.Violin(x=data_line,
                                     line_color=color,
                                     name=name))
         fig.update_traces(
@@ -673,9 +675,8 @@ def ridge_predict(placeholder, condition, behavior_colors):
         st.plotly_chart(fig, use_container_width=True)
 
         fig = go.Figure()
-        for data_line, color, name in zip(duration_matrix, colors, names):
-            fig.add_trace(go.Box(y=data_line[(data_line < np.nanpercentile(data_line, 99)) &
-                                             (data_line > np.nanpercentile(data_line, 1))],
+        for data_line, color, name in zip(duration_matrix, colors, behavior_classes):
+            fig.add_trace(go.Box(y=data_line,
                                  jitter=0.5,
                                  whiskerwidth=0.3,
                                  fillcolor=color,
@@ -690,7 +691,9 @@ def ridge_predict(placeholder, condition, behavior_colors):
 
 
 def condition_ridge_plot():
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     figure_container = st.container()
     option_expander = st.expander("Configure colors",
                                   expanded=True)
@@ -790,8 +793,10 @@ def condition_ridge_plot():
 
 
 def transmat_predict(placeholder, condition, heatmap_color_scheme):
-    behavior_classes = st.session_state['classifier'].classes_
-    names = [f'behavior {int(key)}' for key in behavior_classes]
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
+    # names = [f'behavior {int(key)}' for key in behavior_classes]
     predict = []
     for f in range(len(st.session_state['features'][condition])):
         predict.append(st.session_state['classifier'].predict(st.session_state['features'][condition][f]))
@@ -808,19 +813,21 @@ def transmat_predict(placeholder, condition, heatmap_color_scheme):
         fig.update_layout(
             yaxis=dict(
                 tickmode='array',
-                tickvals=behavior_classes,
-                ticktext=names),
+                tickvals=np.arange(len(behavior_classes)),
+                ticktext=behavior_classes),
             xaxis=dict(
                 tickmode='array',
-                tickvals=behavior_classes,
-                ticktext=names)
+                tickvals=np.arange(len(behavior_classes)),
+                ticktext=behavior_classes)
         )
         st.plotly_chart(fig, use_container_width=True)
 
 
 def directedgraph_predict(placeholder, condition, heatmap_color_scheme):
-    behavior_classes = st.session_state['classifier'].classes_
-    names = [f'behavior {int(key)}' for key in behavior_classes]
+    # behavior_classes = st.session_state['classifier'].classes_
+    # names = [f'behavior {int(key)}' for key in behavior_classes]
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     for f in range(len(st.session_state['features'][condition])):
         predict.append(st.session_state['classifier'].predict(st.session_state['features'][condition][f]))
@@ -846,7 +853,7 @@ def directedgraph_predict(placeholder, condition, heatmap_color_scheme):
         nan_indices = np.isnan(transition_prob_norm)
         transition_prob_norm[nan_indices] = 0
 
-        fig = plt.figure()
+        fig = plt.figure(figsize=(8, 8))
         # particular networkx graph
         graph = nx.from_numpy_array(transition_prob_norm, create_using=nx.MultiDiGraph())
         # set node position with seed 0 for reproducibility
@@ -872,14 +879,14 @@ def directedgraph_predict(placeholder, condition, heatmap_color_scheme):
         label_pos = [node_position[i] + 0.005 for i in range(len(node_position))]
         # draw labels with font size 10
         labels_dict = {}
-        for i, label in enumerate(names):
+        for i, label in enumerate(behavior_classes):
             labels_dict[i] = label
         nx.draw_networkx_labels(graph, label_pos, labels_dict, font_size=10)
         # generate colorbar from the edge colors
         pc = mpl.collections.PatchCollection(edges, cmap=plt.cm.Blues)
         # pc.set_clim([0, max_c])
         pc.set_array(edge_colors)
-        plt.colorbar(pc)
+        plt.colorbar(pc, shrink=0.5, location='bottom')
         ax = plt.gca()
         ax.set_axis_off()
         st.pyplot(fig, use_container_width=True)

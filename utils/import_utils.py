@@ -62,16 +62,16 @@ def condition_prompt(uploaded_files, num_cond):
         # left stays
         left_expander = left_col.expander(f'Condition {row * 2 + 1}:',
                                           expanded=True)
-        uploaded_files[f'condition_{row * 2}'] = left_expander.file_uploader('Upload corresponding pose csv files',
-                                                                             accept_multiple_files=True,
-                                                                             type='csv',
-                                                                             key=f'pose_upload_1_{row}')
+        uploaded_files[f'condition_{row * 2 + 1}'] = left_expander.file_uploader('Upload corresponding pose csv files',
+                                                                                 accept_multiple_files=True,
+                                                                                 type='csv',
+                                                                                 key=f'pose_upload_1_{row}')
         # right only when multiples of 2 or
         if row == rows - 1:
             if mod_ == 0:
                 right_expander = right_col.expander(f'Condition {row * 2 + 2}:',
                                                     expanded=True)
-                uploaded_files[f'condition_{row * 2 + 1}'] = right_expander.file_uploader(
+                uploaded_files[f'condition_{row * 2 + 2}'] = right_expander.file_uploader(
                     'Upload corresponding pose csv files',
                     accept_multiple_files=True,
                     type='csv',
@@ -79,12 +79,11 @@ def condition_prompt(uploaded_files, num_cond):
         else:
             right_expander = right_col.expander(f'Condition {row * 2 + 2}:',
                                                 expanded=True)
-            uploaded_files[f'condition_{row * 2 + 1}'] = right_expander.file_uploader(
+            uploaded_files[f'condition_{row * 2 + 2}'] = right_expander.file_uploader(
                 'Upload corresponding pose csv files',
                 accept_multiple_files=True,
                 type='csv',
                 key=f'pose_upload_2_{row}')
-
 
 
 def load_pickle_model(model):
@@ -154,6 +153,7 @@ class behavior_movies():
             if col2_exp.button('create example videos directory',
                                on_click=os.makedirs(self.vid_dir, exist_ok=True)):
                 st.experimental_rerun()
+
     def ffmpeg_frames(self):
         with st.spinner('Extracting frames from the video... '):
             try:
@@ -195,4 +195,3 @@ class behavior_movies():
     def main(self):
         self.params_setup()
         self.frame_extraction()
-

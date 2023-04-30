@@ -1,5 +1,3 @@
-import streamlit as st
-import numpy as np
 from utils.import_utils import *
 from utils.visuals_utils import *
 
@@ -24,13 +22,12 @@ def main():
         st.warning('please return to home to upload sav files')
     try:
         infilename = str.join('',
-                               (os.path.join(Path.home(),
-                                             'Desktop/behave_track'),
-                                '/behavior_names.npy'))
+                              (os.path.join(Path.home(),
+                                            'Desktop/behave_track'),
+                               '/behavior_names.npy'))
         prev_annotation = np.load(infilename, allow_pickle=True).item()
         if 'annotations' not in st.session_state:
             st.session_state['annotations'] = prev_annotation
-        # st.write(st.session_state['annotations'])
     except:
         pass
 
@@ -48,9 +45,9 @@ def main():
 
     except:
         num_cond = st.number_input('How many conditions?', min_value=2, max_value=10, value=2)
-        uploaded_files = {f'condition_{key}': [] for key in range(num_cond)}
-        pose = {f'condition_{key}': [] for key in range(num_cond)}
-        features = {f'condition_{key}': [] for key in range(num_cond)}
+        uploaded_files = {f'condition_{key}': [] for key in range(1, num_cond + 1)}
+        pose = {f'condition_{key}': [] for key in range(1, num_cond + 1)}
+        features = {f'condition_{key}': [] for key in range(1, num_cond + 1)}
         condition_prompt(uploaded_files, num_cond)
 
         try:
@@ -82,7 +79,7 @@ def main():
             pass
             if 'features' in st.session_state:
                 st.experimental_rerun()
-    condition_pie_plot()
+    # condition_pie_plot()
     try:
         if 'pose' in st.session_state:
             mid_expander = st.expander('Analysis method', expanded=True)

@@ -39,7 +39,6 @@ def prompt_setup(working_dir=Path.home(), prefix='Desktop/behave_track'):
                 video_info['avg_frame_rate'].rpartition('/')[2]))
     except:
         st.warning('please upload both video and pose file')
-
     try:
         new_pose_list = []
         for i, f in enumerate(new_pose_csvs):
@@ -77,9 +76,7 @@ def prompt_setup(working_dir=Path.home(), prefix='Desktop/behave_track'):
             if col3_exp.button('create refined video directory'):
                 os.makedirs(shortvid_dir, exist_ok=True)
                 st.experimental_rerun()
-        if 'annotations' not in st.session_state:
-            st.session_state['annotations'] = {key: {'name':None}
-                                               for key in range(st.session_state['classifier'].n_classes_)}
+
     except:
         pass
     return temporary_location, framerate, new_pose_list, num_outliers, output_fps, frame_dir, shortvid_dir
@@ -100,14 +97,16 @@ def main():
 
     try:
         infilename = str.join('',
-                               (os.path.join(Path.home(),
-                                             'Desktop/behave_track'),
-                                '/behavior_names.npy'))
+                              (os.path.join(Path.home(),
+                                            'Desktop/behave_track'),
+                               '/behavior_names.npy'))
         prev_annotation = np.load(infilename, allow_pickle=True).item()
         if 'annotations' not in st.session_state:
             st.session_state['annotations'] = prev_annotation
-        # st.write(st.session_state['annotations'])
     except:
+        if 'annotations' not in st.session_state:
+            st.session_state['annotations'] = {key: {'name': f'behavior_{key}', 'defined': False}
+                                               for key in range(st.session_state['classifier'].n_classes_)}
         pass
 
     # try:
@@ -135,10 +134,24 @@ def main():
                                     os.remove(file_name)
                             except:
                                 pass
-
-                        behav_choice = st.selectbox("Select the behavior: ", st.session_state['annotations'],
-                                                    index=int(0),
-                                                    key="behavior_choice")
+                        names = [st.session_state['annotations'][i]['name']
+                                 for i in range(len(st.session_state['annotations']))]
+                        # joined_names = ', '.join(st.session_state['annotations'], names)
+                        # st.write(list(st.session_state['annotations'].keys())[0])
+                        names_options = [str.join('', (names[i], ', ',
+                                                       str(list(st.session_state['annotations'].keys())[i])))
+                                         for i in range(len(names))]
+                        if 'working_index' not in st.session_state:
+                            st.session_state.working_index = 0
+                        selection_ = st.radio("Select the behavior: ",
+                                              [names_options[i].rpartition(', ')[0]
+                                               for i in range(len(names_options))],
+                                              index=st.session_state.working_index,
+                                              horizontal=True,
+                                              key="behavior_choice")
+                        behav_choice = [names_options[i].rpartition(', ')[0]
+                                        for i in range(len(names_options))].index(selection_)
+                        st.session_state.working_index = behav_choice
                         alltabs = st.tabs([f'{i}' for i in range(num_outliers)])
                         for i, tab_ in enumerate(alltabs):
                             with tab_:
@@ -160,15 +173,23 @@ def main():
                                 )
 
                                 with colR_exp:
-                                    if st.session_state['annotations'][behav_choice]["name"] is None:
+                                    if st.session_state['annotations'][behav_choice]["defined"] is False:
                                         returned_def = st.text_input('what is this behavior?',
                                                                      key=f'input_box_{behav_choice}_{i}')
+
                                         def save_user_input(returned_def):
                                             st.session_state['annotations'][behav_choice]["name"] = returned_def
+                                            st.session_state['annotations'][behav_choice]["defined"] = True
                                             st.experimental_rerun()
 
                                         if st.button("Submit", key=f'submit_button_{behav_choice}_{i}'):
-                                            save_user_input(returned_def)
+                                            if returned_def not in [
+                                                st.session_state['annotations'][behav_choice]["name"]
+                                                for behav_choice in st.session_state['annotations']
+                                            ]:
+                                                save_user_input(returned_def)
+                                            else:
+                                                st.error('name exists!')
 
                                     else:
                                         st.markdown(
@@ -176,11 +197,16 @@ def main():
                                             f"font-family:Avenir; font-weight:normal'> Behavior name: "
                                             f" {st.session_state['annotations'][behav_choice]['name']} </h1> "
                                             , unsafe_allow_html=True)
-                                        def clear_user_input():
-                                            st.session_state['annotations'][behav_choice]["name"] = None
+
+                                        def clear_user_input(behav_choice):
+                                            st.session_state['annotations'][behav_choice]["name"] = \
+                                                f'behavior_{behav_choice}'
+                                            st.session_state['annotations'][behav_choice]["defined"] = False
                                             st.experimental_rerun()
+
                                         if st.button("Clear", key=f'clear_button_{behav_choice}_{i}'):
-                                            clear_user_input()
+                                            clear_user_input(behav_choice)
+                                # st.write(st.session_state['annotations'])
                                 outfilename = str.join('',
                                                        (os.path.join(Path.home(),
                                                                      'Desktop/behave_track'),

@@ -18,7 +18,7 @@ def csv_predict(condition):
     for f in range(len(st.session_state['features'][condition])):
         predict = st.session_state['classifier'].predict(st.session_state['features'][condition][f])
         predict_dict[f] = {'condition': np.repeat(condition, len(predict)),
-                           'file': np.repeat(f, len(predict)),
+                           'file': np.repeat(f+1, len(predict)),
                            'time': np.round(np.arange(0, len(predict) * 0.1, 0.1), 2),
                            'behavior': np.hstack([behavior_classes[p] for p in predict])}
         predict_df.append(pd.DataFrame(predict_dict[f]))
@@ -27,12 +27,14 @@ def csv_predict(condition):
 
 
 def duration_pie_csv(condition):
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict_dict = {key: [] for key in range(len(st.session_state['features'][condition]))}
     duration_pie_df = []
     for f in range(len(st.session_state['features'][condition])):
         predict = st.session_state['classifier'].predict(st.session_state['features'][condition][f])
         predict_dict[f] = {'condition': np.repeat(condition, len(predict)),
-                           'file': np.repeat(f, len(predict)),
+                           'file': np.repeat(f+1, len(predict)),
                            'time': np.round(np.arange(0, len(predict) * 0.1, 0.1), 2),
                            'behavior': predict}
         predict_df = pd.DataFrame(predict_dict[f])
@@ -40,11 +42,14 @@ def duration_pie_csv(condition):
         file_id = np.repeat(predict_df['file'].value_counts(sort=False).index,
                             len(np.unique(labels)))
         values = predict_df['behavior'].value_counts(sort=False).values
+        behavior_labels = []
+        for l in labels:
+            behavior_labels.append(behavior_classes[int(l)])
         # summary dataframe
         df = pd.DataFrame()
         df['values'] = values
         df['file_id'] = file_id
-        df['labels'] = labels
+        df['labels'] = behavior_labels
         duration_pie_df.append(df)
     concat_df = pd.concat([duration_pie_df[f] for f in range(len(duration_pie_df))])
     return convert_df(concat_df)
@@ -54,7 +59,7 @@ def get_num_bouts(predict, behavior_classes):
     bout_counts = []
     bout_start_idx = np.where(np.diff(np.hstack([-1, predict])) != 0)[0]
     bout_start_label = predict[bout_start_idx]
-    for b in behavior_classes:
+    for b, behavior_name in enumerate(behavior_classes):
         idx_b = np.where(bout_start_label == int(b))[0]
         if len(idx_b) > 0:
             bout_counts.append(len(idx_b))
@@ -66,7 +71,9 @@ def get_num_bouts(predict, behavior_classes):
 def bout_bar_csv(condition):
     predict_dict = {key: [] for key in range(len(st.session_state['features'][condition]))}
     bout_counts = {key: [] for key in range(len(st.session_state['features'][condition]))}
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     bout_counts_df = []
     for f in range(len(st.session_state['features'][condition])):
@@ -74,7 +81,7 @@ def bout_bar_csv(condition):
     for f in range(len(predict)):
         bout_counts[f] = get_num_bouts(predict[f], behavior_classes)
         predict_dict[f] = {'condition': np.repeat(condition, len(behavior_classes)),
-                           'file': np.repeat(f, len(behavior_classes)),
+                           'file': np.repeat(f+1, len(behavior_classes)),
                            'behavior': behavior_classes,
                            'number of bouts': bout_counts[f],
                            }
@@ -88,7 +95,7 @@ def get_duration_bouts(predict, behavior_classes, framerate=10):
     bout_start_idx = np.where(np.diff(np.hstack([-1, predict])) != 0)[0]
     bout_durations = np.hstack([np.diff(bout_start_idx), len(predict) - np.max(bout_start_idx)])
     bout_start_label = predict[bout_start_idx]
-    for b in behavior_classes:
+    for b, behavior_name in enumerate(behavior_classes):
         idx_b = np.where(bout_start_label == int(b))[0]
         if len(idx_b) > 0:
             behav_durations.append(bout_durations[idx_b]/framerate)
@@ -100,7 +107,9 @@ def get_duration_bouts(predict, behavior_classes, framerate=10):
 def duration_ridge_csv(condition):
     predict_dict = {key: [] for key in range(len(st.session_state['features'][condition]))}
     durations_ = {key: [] for key in range(len(st.session_state['features'][condition]))}
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     durations_df = []
     for f in range(len(st.session_state['features'][condition])):
@@ -109,7 +118,7 @@ def duration_ridge_csv(condition):
         durations_[f] = get_duration_bouts(predict[f], behavior_classes)
         predict_dict[f] = {'condition': np.hstack([np.repeat(condition, len(durations_[f][i]))
                                                    for i in range(len(durations_[f]))]),
-                           'file': np.hstack([np.repeat(f, len(durations_[f][i]))
+                           'file': np.hstack([np.repeat(f+1, len(durations_[f][i]))
                                               for i in range(len(durations_[f]))]),
                            'behavior': np.hstack([np.repeat(behavior_classes[i],
                                                   len(durations_[f][i])) for i in range(len(durations_[f]))]),
@@ -121,7 +130,7 @@ def duration_ridge_csv(condition):
 
 
 def get_transitions(predict, behavior_classes):
-    class_int = [int(i) for i in behavior_classes]
+    class_int = [int(i) for i, behavior_name in enumerate(behavior_classes)]
     tm = [[0] * np.unique(class_int) for _ in np.unique(class_int)]
     for (i, j) in zip(predict, predict[1:]):
         tm[int(i)][int(j)] += 1
@@ -133,7 +142,9 @@ def get_transitions(predict, behavior_classes):
 
 def transmat_csv(condition):
     transitions_ = []
-    behavior_classes = st.session_state['classifier'].classes_
+    # behavior_classes = st.session_state['classifier'].classes_
+    behavior_classes = [st.session_state['annotations'][i]['name']
+                        for i in list(st.session_state['annotations'])]
     predict = []
     for f in range(len(st.session_state['features'][condition])):
         predict.append(st.session_state['classifier'].predict(st.session_state['features'][condition][f]))
@@ -141,7 +152,7 @@ def transmat_csv(condition):
         count_tm, prob_tm = get_transitions(predict[f], behavior_classes)
         transitions_.append(prob_tm)
     mean_transitions = np.mean(transitions_, axis=0)
-    transmat_df = pd.DataFrame(mean_transitions)
+    transmat_df = pd.DataFrame(mean_transitions, index=behavior_classes, columns=behavior_classes)
     return convert_df(transmat_df)
 
 

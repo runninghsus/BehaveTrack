@@ -35,6 +35,7 @@ streamlit run behavetrack.py
 
 Quality of life improvements: 
 * Drag and drop B-SOiD trained classifier
+* Drag and drop A-SOiD trained classifier
 * Using example video to annotate user-definition 
 * Organize files into 2+ conditions for comparisons, including the following:
 
@@ -48,7 +49,8 @@ Reactive post-hoc analyses:
 
 
 ### In progress
-
+Quality of life improvements: 
+* annotation retrieval from A-SOiD
 Reactive post-hoc analyses: 
 * behavioral pose speed
 

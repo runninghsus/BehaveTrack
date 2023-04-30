@@ -51,6 +51,7 @@ Reactive post-hoc analyses:
 ### In progress
 Quality of life improvements: 
 * annotation retrieval from A-SOiD
+
 Reactive post-hoc analyses: 
 * behavioral pose speed
 

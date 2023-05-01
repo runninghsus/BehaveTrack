@@ -2,6 +2,10 @@
 <p align="center">
 <img src="./images/banner.png" width="400">
 </p>
+
+[![GitHub stars](https://img.shields.io/github/stars/runninghsus/BehaveTrack.svg?style=social&label=Star)](https://github.com/runninghsus/BehaveTrack)
+[![GitHub forks](https://img.shields.io/github/forks/runninghsus/BehaveTrack.svg?style=social&label=Fork)](https://github.com/runninghsus/BehaveTrack)
+
 BehaveTrack uses user-specific B-SOiD/A-SOiD classifier to predict behavior based on pose. 
 Generate ethogram and summary statistics for animal recordings. 
 Intuitive interface for tagging and grouping files. 
